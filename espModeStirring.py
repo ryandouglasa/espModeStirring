@@ -28,6 +28,13 @@ class espModeStirring:
 		else:
 			self.bugVar = 1
 
+	#RD: reads all errors, emptying error queue in controller
+	def empty_errors(self):
+		for i in range(10):
+			errNum = self.check_errors()
+			if(errNum != 0):
+				print("error #%d"%errNum)
+
 	def reset(self,axis):
 		self.dev.write(b"%dOR;%dWS0\r"%(axis,axis))
 	
@@ -51,14 +58,33 @@ class espModeStirring:
 		self.dev.write(b"%dPA%.4f;%dWS1;%dTP\r"%(a,pos,a,a))
 		return float(self.dev.readline())
 
-	#RD: accepts x,y coordinates and sends to controller
+	#RD: accepts x,y coordinates in millimeters and sends to controller
 	def setpos2(self, posx, posy, axis1=None, axis2=None):
 		a = axis1
 		b = axis2
 		if self.bugVar == 1:
 			print("setting postition to x : %f, y : %f"%(posx, posy))
 		self.dev.write(b"%dPA%.4f;%dPA%.4f;%dWS1;%dWS1;%dTP;%dTP\r"%(a,posx,b,posy, a, b, a, b))
+		if self.bugVar == 1:
+			print("stage should be in position now")
 		return float(self.dev.readline())
+	
+	#RD: accepts x,y coordinates in millimeters and a wait time in seconds, sends commands to controller
+	def setpos2wait(self, posx, posy, waits, axis1=None, axis2=None):
+		a = axis1
+		b = axis2
+		waitms = int(1000 * waits)
+		command = b";%dWS0;%dWS0;%dPA%.4f;%dPA%.4f;%dWS0;%dWS0;%dTP;%dTP\r"%(a, b, a, posx, b, posy, a, b, a, b)
+		if self.bugVar == 1:
+			print(" setting postition to x : %f, y : %f, and waiting for %d milliseconds"%(posx, posy, waitms))
+			print("command sent to controller is ->" + str(command, 'ASCII'))
+		self.dev.write(command)
+		#self.dev.write(b"%dTP;%dTP\r"%(a,b))
+		line = self.dev.readline()
+		if self.bugVar == 1:
+			print("stage should be in position now")
+			print("returned ->" + str(line))
+		return float(line)
 
 	#RD: accepts axis and returns velocity setting of the axis
 	def getvel(self,axis=None):
