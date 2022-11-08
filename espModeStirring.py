@@ -13,12 +13,12 @@ class espModeStirring:
 				self.reset(n)
 				r = self.check_errors()
 				if(r!=0):
-					print("Error while setting up controller, error # %d"%r)
+					print("ESP controller error # %d"%r)
 				if(initpos!=0):
 					self.setpos(initpos)
 					r = self.check_errors()
 					if(r!=0):
-						print("Error while setting up controller, error # %d"%r)
+						print("ESP controller error # %d"%r)
 
 
 	#RD: changes debug variable to the opposite of its current state, default state is 0
@@ -33,10 +33,18 @@ class espModeStirring:
 		for i in range(10):
 			errNum = self.check_errors()
 			if(errNum != 0):
-				print("error #%d"%errNum)
+				print("ESP controller error # %d"%errNum)
+			else:
+				print("No errors in ESP controller")
+
+	#RD: send TB command to controller
+	def tell_buffer(self):
+		self.dev.write(b"TB?\r")
+		line = self.dev.readline()
+		print(line)
 
 	def reset(self,axis):
-		self.dev.write(b"%dOR;%dWS0\r"%(axis,axis))
+		self.dev.write(b"%dWS0;%dOR;%dWS0\r"%(axis,axis,axis))
 	
 	def check_errors(self):
 		self.dev.write(b"TE?\r")
@@ -46,44 +54,65 @@ class espModeStirring:
 		a = self.defaxis
 		if(axis and axis>0):
 			a = axis
-		self.dev.write(b"%dTP\r"%a)
-		return float(self.dev.readline())
+		command = b";%dTP\r"%a
+		if self.bugVar == 1:
+			print("command sent to controller is ->" + str(command, 'ASCII'))
+		self.dev.write(command)
+		line = self.dev.readline()
+		if self.bugVar == 1:
+			print("stage should be in position now")
+			print("returned ->" + str(line))
+		return float(line)
 	
 	def setpos(self,pos,axis=None):
 		a = self.defaxis
 		if(axis and axis>0):
 			a = axis
+		command = b"%dWS0;%dPA%.4f;%dWS0;%dTP\r"%(a,a,pos,a,a)
 		if self.bugVar == 1:
-			print("setting postition to %f"%pos)
-		self.dev.write(b"%dPA%.4f;%dWS1;%dTP\r"%(a,pos,a,a))
-		return float(self.dev.readline())
+			print("setting axis %d postition to %f"%(a,pos))
+			print("command sent to controller is ->" + str(command, 'ASCII'))
+		self.dev.write(command)
+		line = self.dev.readline()
+		if self.bugVar == 1:
+			print("stage should be in position now")
+			print("returned ->" + str(line))
+		return float(line)
 
 	#RD: accepts x,y coordinates in millimeters and sends to controller
 	def setpos2(self, posx, posy, axis1=None, axis2=None):
 		a = axis1
 		b = axis2
+		command = b"%dWS0;%dWS0;%dPA%.4f;%dPA%.4f;%dWS1;%dWS1;%dTP;%dTP\r"%(a,b,a,posx,b,posy, a, b, a, b)
 		if self.bugVar == 1:
-			print("setting postition to x : %f, y : %f"%(posx, posy))
-		self.dev.write(b"%dPA%.4f;%dPA%.4f;%dWS1;%dWS1;%dTP;%dTP\r"%(a,posx,b,posy, a, b, a, b))
-		if self.bugVar == 1:
-			print("stage should be in position now")
-		return float(self.dev.readline())
-	
-	#RD: accepts x,y coordinates in millimeters and a wait time in seconds, sends commands to controller
-	def setpos2wait(self, posx, posy, waits, axis1=None, axis2=None):
-		a = axis1
-		b = axis2
-		waitms = int(1000 * waits)
-		command = b";%dWS0;%dWS0;%dPA%.4f;%dPA%.4f;%dWS0;%dWS0;%dTP;%dTP\r"%(a, b, a, posx, b, posy, a, b, a, b)
-		if self.bugVar == 1:
-			print(" setting postition to x : %f, y : %f, and waiting for %d milliseconds"%(posx, posy, waitms))
+			print("setting postition to x : %f, y : %f ")%(posx, posy)
 			print("command sent to controller is ->" + str(command, 'ASCII'))
 		self.dev.write(command)
-		#self.dev.write(b"%dTP;%dTP\r"%(a,b))
 		line = self.dev.readline()
 		if self.bugVar == 1:
 			print("stage should be in position now")
 			print("returned ->" + str(line))
+		return float(line)
+	
+	#RD: accepts x,y coordinates in millimeters and a wait time in seconds, sends commands to controller
+	#only works as desired with semicolon in front, but that puts an error in the buffer
+	def setpos2wait(self, posx, posy, axis1=None, axis2=None):
+		a = axis1
+		b = axis2
+		command = b";%dWS0;%dWS0;%dPA%.4f;%dPA%.4f;%dWS0;%dWS0;%dTP;%dTP\r"%(a, b, a, posx, b, posy, a, b, a, b)
+		if self.bugVar == 1:
+			print(" setting postition to x : %f, y : %f"%(posx, posy))
+			print("command sent to controller is ->" + str(command, 'ASCII'))
+		self.dev.write(command)
+		line = self.dev.readline()
+		if self.bugVar == 1:
+			print("stage should be in position now")
+			print("returned ->" + str(line))
+		#the 2 lines of code below delete the ESP error #6 thrown every time setpos2wait is called,
+		#this error is thrown because of the semicolon at the beginning of command, but the desired behavior
+		#doesn't happen without that semicolon
+		self.dev.write(b"TE?\r")
+		self.dev.readline()
 		return float(line)
 
 	#RD: accepts axis and returns velocity setting of the axis
@@ -91,18 +120,32 @@ class espModeStirring:
 		a=self.defaxis
 		if(axis and axis>0):
 			a = axis
-		self.dev.write(b"%dVA?\r"%a)
-		return float(self.dev.readline())
+		command = b"%dVA?\r"%a
+		if self.bugVar == 1:
+			print("command sent to controller is ->" + str(command, 'ASCII'))
+		self.dev.write(command)
+		line = self.dev.readline()
+		if self.bugVar == 1:
+			print("stage should be in position now")
+			print("returned ->" + str(line))
+		return float(line)
 
 	#RD: accepts axis and new velocity setting for axis, sets axis velocity to input
 	def setvel(self,vel,axis=None):
 		a = self.defaxis
 		if(axis and axis>0):
 			a = axis
+		command = b"%dWS0;%dVA%f;%dVA?\r"%(a,a,vel,a)
 		if self.bugVar == 1:
-			print("setting velocity to %f"%vel)
-		self.dev.write(b"%dVA%f;%dVA?\r"%(a,vel,a))
-		return float(self.dev.readline())
+			print("setting axis %d velocity to %f"%(a, vel))
+			print("command sent to controller is ->" + str(command, 'ASCII'))
+		self.dev.write(command)
+		line = self.dev.readline()
+		if self.bugVar == 1:
+			print("stage should be in position now")
+			print("returned ->" + str(line))
+		return float(line)
+
 
 	def position(self,pos=None,axis=None):
 		if(isinstance(pos,(float,int))):
