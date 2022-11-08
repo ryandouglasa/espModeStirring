@@ -12,6 +12,6 @@ ESP-301-3N Motion Controller connected to 2 IMS 600-pp motion stages
 4. ESP301 should be installed correctly now
 5. In your python environment run "pip uninstall serial"
 6. Run "pip install pyserial"
-7. The last two steps prevent a lot of headaches when using pyserial, if it still doesn't work, run pip install --upgrade --force-reinstall pyserial
+7. The last two steps prevent a lot of headaches when using pyserial, if it still doesn't work, run 'pip install --upgrade --force-reinstall pyserial'
 8. *important* When initializing the pySerial object to send commands to the ESP301 you will refer to its port name. It defaulted to COM3 in the lab, but defaulted to COM7 on my personal laptop. To solve this I changed COM3 to COM7 in both the espModeStirring class initialization function and the call on it via "espModeStirring.espModeStirring()" in each initialization of the class. Shown in "namedcom7"
 9. Now you should be able to run esp301 mulit-position 2 axis motion
