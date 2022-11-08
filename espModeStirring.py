@@ -54,13 +54,12 @@ class espModeStirring:
 		a = self.defaxis
 		if(axis and axis>0):
 			a = axis
-		command = b";%dTP\r"%a
+		command = b"%dTP\r"%a
 		if self.bugVar == 1:
 			print("command sent to controller is ->" + str(command, 'ASCII'))
 		self.dev.write(command)
 		line = self.dev.readline()
 		if self.bugVar == 1:
-			print("stage should be in position now")
 			print("returned ->" + str(line))
 		return float(line)
 	
@@ -83,9 +82,9 @@ class espModeStirring:
 	def setpos2(self, posx, posy, axis1=None, axis2=None):
 		a = axis1
 		b = axis2
-		command = b"%dWS0;%dWS0;%dPA%.4f;%dPA%.4f;%dWS1;%dWS1;%dTP;%dTP\r"%(a,b,a,posx,b,posy, a, b, a, b)
+		command = b"%dWS0;%dWS0;%dPA%.4f;%dPA%.4f;%dWS0;%dWS0;%dTP;%dTP\r"%(a,b,a,posx,b,posy, a, b, a, b)
 		if self.bugVar == 1:
-			print("setting postition to x : %f, y : %f ")%(posx, posy)
+			print("setting postition to x : %f, y : %f "%(posx, posy))
 			print("command sent to controller is ->" + str(command, 'ASCII'))
 		self.dev.write(command)
 		line = self.dev.readline()
@@ -94,7 +93,7 @@ class espModeStirring:
 			print("returned ->" + str(line))
 		return float(line)
 	
-	#RD: accepts x,y coordinates in millimeters and a wait time in seconds, sends commands to controller
+	#RD: accepts x,y coordinates in millimeters, sends commands to controller
 	#only works as desired with semicolon in front, but that puts an error in the buffer
 	def setpos2wait(self, posx, posy, axis1=None, axis2=None):
 		a = axis1
@@ -126,7 +125,6 @@ class espModeStirring:
 		self.dev.write(command)
 		line = self.dev.readline()
 		if self.bugVar == 1:
-			print("stage should be in position now")
 			print("returned ->" + str(line))
 		return float(line)
 
@@ -142,7 +140,6 @@ class espModeStirring:
 		self.dev.write(command)
 		line = self.dev.readline()
 		if self.bugVar == 1:
-			print("stage should be in position now")
 			print("returned ->" + str(line))
 		return float(line)
 
