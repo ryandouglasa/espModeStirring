@@ -5,6 +5,8 @@ USB config 921600 baud rate, 8 data bits, N parity, 1 stop bit
 
 ESP-301-3N Motion Controller connected to 2 IMS 600-pp motion stages
 
+https://www.newport.com/medias/sys_master/images/images/hda/h3e/9117547069470/ESP301-User-s-Manual.pdf
+
 # Seting up serial to usb connection to your windows x64 machine
 1. Download the entire github repository as zip as shown in "download github repository" which is located in esp301 setup tutorial file
 2. Open device manager and locate ESP301 motion controller, probably under "other devices". Shown in "Findespindevmanager"
