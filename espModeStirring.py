@@ -1,7 +1,7 @@
 import serial
 
 class espModeStirring:
-	def __init__(self, dev="COM3", b=921600,axis=1,reset=True, initpos = 0.0,useaxis=[]):
+	def __init__(self, dev="COM8", b=921600,axis=1,reset=True, initpos = 0.0,useaxis=[]):
 		self.dev = serial.Serial(dev,b)
 		self.inuse = useaxis
 		self.bugVar = 0
@@ -88,9 +88,11 @@ class espModeStirring:
 			print("command sent to controller is ->" + str(command, 'ASCII'))
 		self.dev.write(command)
 		line = self.dev.readline()
+		line2 = self.dev.readline()
 		if self.bugVar == 1:
 			print("stage should be in position now")
 			print("returned ->" + str(line))
+			print("returned ->" + str(line2))
 		return float(line)
 	
 	#RD: accepts x,y coordinates in millimeters, sends commands to controller
@@ -113,6 +115,28 @@ class espModeStirring:
 		self.dev.write(b"TE?\r")
 		self.dev.readline()
 		return float(line)
+	
+	#RD:Sends TX to contoller
+	# 	Example usage from user program
+
+	#	(movement command)
+	#	variable = controller.TX()
+	#	while (variable != (b'@\r\n')):    // @ = 01000000
+	#		time.sleep(0.5)
+	#		variable = controller.TX()
+	def TX(self,axis=None):
+		a = self.defaxis
+		if(axis and axis>0):
+			a = axis
+		command = b"TX\r"
+		if self.bugVar == 1:
+			print("Sending Command bits: " + str(command) + "to controller")
+			print("command sent to controller is ->" + str(command, 'ASCII'))
+		self.dev.write(command)
+		line = self.dev.readline()
+		if self.bugVar == 1:
+			print("returned ->" + str(line))
+		return line
 
 	#RD: accepts axis and returns velocity setting of the axis
 	def getvel(self,axis=None):
